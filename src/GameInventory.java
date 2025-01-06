@@ -1,164 +1,181 @@
-// Import
-// Composant graphique
 import javax.swing.*;
-// Classse des composants dépendant du systeme natif
 import java.awt.*;
-// Gérer les évenements
-import java.awt.event.ActionEvent;
-// Ecouter les évenements
-import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
-// Class GameInventory
 public class GameInventory {
-    // Déclaration
-    // la fenetre principale
-    private JFrame frame;
-    // Champs nom d'objet
-    private JTextField nameField;
-    // Champs quantité d'objet
-    private JTextField quantityField;
-    // Modele de liste par défault
-    private DefaultListModel<String> inventoryModel;
-    // Liste objet de l'inventaire
-    private JList<String> inventoryList;
+    private final JFrame frame; // Fenêtre principale de l'application
+    private final JTextField nomChamp; // Champ de texte pour le nom de l'élément
+    private final JTextField quantiteChamp; // Champ de texte pour la quantité de l'élément
+    private final DefaultListModel<String> modeleInventaire; // Modèle de liste pour stocker les éléments de l'inventaire
+    private final JPanel panneauInventaire; // Panneau pour afficher les éléments de l'inventaire
+    private JButton boutonSelectionne; // Bouton actuellement sélectionné
 
-    
     public GameInventory() {
-        // Créer la fenetre principale
+        // Initialisation de la fenêtre principale
         frame = new JFrame("Gestion d'Inventaire");
-        // Taille de la fenetre
         frame.setSize(800, 300);
-        // Fermer lors d'un clique sur la croix
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        // Gestionnaire de mise en page
         frame.setLayout(new BorderLayout());
 
-        // Créer les panneaux
-        JPanel inputPanel = new JPanel();
-        inputPanel.setLayout(new FlowLayout());
+        // Panneau pour les champs d'entrée
+        JPanel panneauEntree = new JPanel();
+        panneauEntree.setLayout(new FlowLayout());
 
-        // Créer les composants
-        nameField = new JTextField(10); // TextField pour le nom de l'objet
-        quantityField = new JTextField(5); // TextField pour la quantité
-        JButton addButton = new JButton("Ajouter"); // Bouton "Ajouter"
-        JButton removeButton = new JButton("Supprimer"); // Bouton "Supprimer"
+        // Création des champs de texte et des boutons
+        nomChamp = new JTextField(10);
+        quantiteChamp = new JTextField(5);
+        JButton boutonAjouter = new JButton("Ajouter");
+        JButton boutonSupprimer = new JButton("Supprimer");
 
-        // Modèle et liste pour l'inventaire
-        inventoryModel = new DefaultListModel<>();
-        inventoryList = new JList<>(inventoryModel);
-        JScrollPane listScrollPane = new JScrollPane(inventoryList); // Ajout d'un JScrollPane pour la liste
+        // Initialisation du modèle d'inventaire
+        modeleInventaire = new DefaultListModel<>();
+        panneauInventaire = new JPanel();
+        panneauInventaire.setLayout(new GridLayout(0, 4)); // GridLayout avec 4 colonnes
 
-        // Ajouter les composants au panneau d'entrée
-        inputPanel.add(new JLabel("Nom:"));
-        inputPanel.add(nameField);
-        inputPanel.add(new JLabel("Quantité:"));
-        inputPanel.add(quantityField);
-        inputPanel.add(addButton);
-        inputPanel.add(removeButton);
+        // Ajout d'un JScrollPane pour le panneau d'inventaire
+        JScrollPane listeScrollPane = new JScrollPane(panneauInventaire);
 
-        // Ajouter les panneaux à la fenetre principale
-        frame.add(inputPanel, BorderLayout.NORTH);
-        frame.add(listScrollPane, BorderLayout.CENTER);
+        // Ajout des composants au panneau d'entrée
+        panneauEntree.add(new JLabel("Nom:"));
+        panneauEntree.add(nomChamp);
+        panneauEntree.add(new JLabel("Quantité:"));
+        panneauEntree.add(quantiteChamp);
+        panneauEntree.add(boutonAjouter);
+        panneauEntree.add(boutonSupprimer);
+
+        // Ajout des panneaux à la fenêtre principale
+        frame.add(panneauEntree, BorderLayout.NORTH);
+        frame.add(listeScrollPane, BorderLayout.CENTER);
 
         // Action pour le bouton "Ajouter"
-        addButton.addActionListener(new ActionListener() {
-            /**
-            * L'annotation @Override indique que la méthode actionPerformed 
-            implémente une méthode de l'interface ActionListener,
-            permettant ainsi une vérification par le compilateur
-            et améliorant la lisibilité du code
-             */
-            @Override 
-            public void actionPerformed(ActionEvent e) {
-                // Récuperer le nom de l'objet
-                String name = nameField.getText();
-                // Récuperer la quantité de l'objet
-                String quantityText = quantityField.getText();
+        boutonAjouter.addActionListener(e -> {
+            String nom = nomChamp.getText();
+            String quantiteTexte = quantiteChamp.getText();
 
-                // Vérifier que les champs ne sont pas vides
-                if (!name.isEmpty() && !quantityText.isEmpty()) {
-                    int quantity = Integer.parseInt(quantityText);
-                    boolean itemExists = false;
+            // Vérification que les champs ne sont pas vides
+            if (!nom.isEmpty() && !quantiteTexte.isEmpty()) {
+                int quantite = Integer.parseInt(quantiteTexte);
+                boolean elementExistant = false;
 
-                    // Vérifier si l'objet existe déjà dans l'inventaire
-                    for (int i = 0; i < inventoryModel.size(); i++) {
-                        String item = inventoryModel.get(i);
-                        if (item.startsWith(name + " (Quantité: ")) {
-                            // Si l'objet existe, augmenter la quantité
-                            String currentQuantityText = item.substring(item.indexOf(": ") + 2, item.indexOf(")"));
-                            int currentQuantity = Integer.parseInt(currentQuantityText);
-                            currentQuantity += quantity; // Augmenter la quantité
-                            inventoryModel.set(i, name + " (Quantité: " + currentQuantity + ")");
-                            itemExists = true;
-                            break;
-                        }
+                // Vérification si l'élément existe déjà dans l'inventaire
+                for (int i = 0; i < modeleInventaire.size(); i++) {
+                    String element = modeleInventaire.get(i);
+                    if (element.startsWith(nom + " (Quantité: ")) {
+                        String quantiteActuelleTexte = element.substring(element.indexOf(": ") + 2, element.indexOf(")"));
+                        int quantiteActuelle = Integer.parseInt(quantiteActuelleTexte);
+                        quantiteActuelle += quantite;
+                        modeleInventaire.set(i, nom + " (Quantité: " + quantiteActuelle + ")");
+                        mettreAJourPanneauInventaire();
+                        elementExistant = true;
+                        break;
                     }
-
-                    // Si l'objet n'existe pas, l'ajouter à l'inventaire
-                    if (!itemExists) {
-                        inventoryModel.addElement(name + " (Quantité: " + quantity + ")");
-                    }
-
-                    // Réinitialiser les champs de saisie
-                    nameField.setText("");
-                    quantityField.setText("");
-                } else {
-                    // Afficher un message d'erreur si les champs sont vides
-                    JOptionPane.showMessageDialog(frame, "Veuillez remplir tous les champs.", "Erreur", JOptionPane.ERROR_MESSAGE);
                 }
+
+                // Si l'élément n'existe pas, l'ajouter à l'inventaire
+                if (!elementExistant) {
+                    modeleInventaire.addElement(nom + " (Quantité: " + quantite + ")");
+                    mettreAJourPanneauInventaire();
+                }
+
+                // Réinitialiser les champs de texte
+                nomChamp.setText("");
+                quantiteChamp.setText("");
+            } else {
+                // Afficher un message d'erreur si les champs sont vides
+                JOptionPane.showMessageDialog(frame, "Veuillez remplir tous les champs.", "Erreur", JOptionPane.ERROR_MESSAGE);
             }
         });
 
         // Action pour le bouton "Supprimer"
-        removeButton.addActionListener(new ActionListener() {
-            /**
-            * actionPerformed implémente la methode de l'interface ActionListener
-             */
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                // Récuperer l'index de liste de l'objet sélectionné
-                int selectedIndex = inventoryList.getSelectedIndex();
-                // Vérifier qu'un élément est sélectionné
-                if (selectedIndex != -1) {
-                    // Récuperer l'index de la liste de l'objet sélectionné (en string)
-                    String selectedItem = inventoryModel.get(selectedIndex);
-                    // Récuperer la quantité de l'objet séléctionné (en string)
-                    String currentQuantityText = selectedItem.substring(selectedItem.indexOf(": ") + 2, selectedItem.indexOf(")"));
-                    // Transformer la quantité string en Integer
-                    int currentQuantity = Integer.parseInt(currentQuantityText);
+        boutonSupprimer.addActionListener(e -> {
+            String elementSelectionne = obtenirElementSelectionne();
 
-                    // Récupérer la quantité à supprimer dans le champs de texte (en string)
-                    String quantityText = quantityField.getText();
-                    // Vérifier si la quantité n'est pas vide
-                    if (!quantityText.isEmpty()) {
-                        // Transformer la quantité string en Integer
-                        int quantityToRemove = Integer.parseInt(quantityText);
+            // Vérification qu'un élément est sélectionné
+            if (elementSelectionne != null) {
+                String quantiteActuelleTexte = elementSelectionne.substring(elementSelectionne.indexOf(": ") + 2, elementSelectionne                    .indexOf(")"));
+                int quantiteActuelle = Integer.parseInt(quantiteActuelleTexte);
+                String quantiteTexte = quantiteChamp.getText();
 
-                        // Vérifier si la quantité à supprimer est valide
-                        if (quantityToRemove > currentQuantity) {
-                            // Afficher que la quantité à supprimé > existante
-                            JOptionPane.showMessageDialog(frame, "La quantité à supprimer est supérieure à la quantité existante.", "Erreur", JOptionPane.ERROR_MESSAGE);
-                        } else {
-                            // Mettre à jour la quantité ou supprimer l'élément si la quantité atteint zéro
-                            currentQuantity -= quantityToRemove;
-                            if (currentQuantity > 0) {
-                                inventoryModel.set(selectedIndex, selectedItem.substring(0, selectedItem.indexOf(": ") + 2) + currentQuantity + ")");
-                            } else {
-                                inventoryModel.remove(selectedIndex); // Supprimer l'élément si la quantité est zéro
-                            }
-                        }
+                // Vérification que la quantité à supprimer est spécifiée
+                if (!quantiteTexte.isEmpty()) {
+                    int quantiteASupprimer = Integer.parseInt(quantiteTexte);
+
+                    // Vérification que la quantité à supprimer ne dépasse pas la quantité existante
+                    if (quantiteASupprimer > quantiteActuelle) {
+                        JOptionPane.showMessageDialog(frame, "La quantité à supprimer est supérieure à la quantité existante.", "Erreur", JOptionPane.ERROR_MESSAGE);
                     } else {
-                        // Afficher un message d'erreur si la quantité est vide
-                        JOptionPane.showMessageDialog(frame, "Veuillez entrer une quantité à supprimer.", "Erreur", JOptionPane.ERROR_MESSAGE);
+                        quantiteActuelle -= quantiteASupprimer;
+                        // Mettre à jour ou supprimer l'élément selon la nouvelle quantité
+                        if (quantiteActuelle > 0) {
+                            modeleInventaire.set(modeleInventaire.indexOf(elementSelectionne), elementSelectionne.substring(0, elementSelectionne.indexOf(": ") + 2) + quantiteActuelle + ")");
+                        } else {
+                            modeleInventaire.removeElement(elementSelectionne);
+                        }
+                        mettreAJourPanneauInventaire();
                     }
                 } else {
-                    // Afficher un message d'erreur si aucun élément n'est sélectionné
-                    JOptionPane.showMessageDialog(frame, "Veuillez sélectionner un élément à supprimer.", "Erreur", JOptionPane.ERROR_MESSAGE);
+                    // Afficher un message d'erreur si la quantité à supprimer est vide
+                    JOptionPane.showMessageDialog(frame, "Veuillez entrer une quantité à supprimer.", "Erreur", JOptionPane.ERROR_MESSAGE);
                 }
+            } else {
+                // Afficher un message d'erreur si aucun élément n'est sélectionné
+                JOptionPane.showMessageDialog(frame, "Veuillez sélectionner un élément à supprimer.", "Erreur", JOptionPane.ERROR_MESSAGE);
             }
         });
 
-        // Rendre la fenetre visible
+        // Rendre la fenêtre visible
         frame.setVisible(true);
     }
+
+    // Méthode pour mettre à jour le panneau d'inventaire
+    private void mettreAJourPanneauInventaire() {
+        panneauInventaire.removeAll(); // Effacer le panneau d'inventaire
+
+        // Ajouter un bouton pour chaque élément de l'inventaire
+        for (int i = 0; i < modeleInventaire.size(); i++) {
+            String element = modeleInventaire.get(i);
+            JButton boutonElement = new JButton(element);
+            boutonElement.setPreferredSize(new Dimension(70, 70)); // Définir une taille fixe pour les boutons (petits carrés)
+
+            // Action pour mettre à jour le champ de quantité lorsque le bouton est cliqué
+            boutonElement.addActionListener(e -> {
+                // Mettre à jour le champ de quantité avec la quantité de l'élément sélectionné
+                String quantiteActuelleTexte = element.substring(element.indexOf(": ") + 2, element.indexOf(")"));
+                quantiteChamp.setText(quantiteActuelleTexte);
+                selectionnerBouton(boutonElement); // Sélectionner le bouton
+            });
+
+            // Ajouter un MouseListener pour gérer la sélection
+            boutonElement.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    selectionnerBouton(boutonElement); // Sélectionner le bouton
+                }
+            });
+
+            panneauInventaire.add(boutonElement); // Ajouter le bouton au panneau d'inventaire
+        }
+
+        panneauInventaire.revalidate(); // Revalider le panneau pour appliquer les changements
+        panneauInventaire.repaint(); // Repeindre le panneau pour afficher les nouveaux boutons
+    }
+
+    // Méthode pour sélectionner un bouton
+    private void selectionnerBouton(JButton bouton) {
+        // Réinitialiser la couleur de fond des boutons précédemment sélectionnés
+        if (boutonSelectionne != null) {
+            boutonSelectionne.setBackground(null); // Réinitialiser la couleur de fond
+        }
+        // Mettre à jour le bouton sélectionné
+        boutonSelectionne = bouton;
+        boutonSelectionne.setBackground(Color.LIGHT_GRAY); // Changer la couleur de fond pour indiquer la sélection
+    }
+
+    // Méthode pour obtenir l'élément actuellement sélectionné
+    private String obtenirElementSelectionne() {
+        // Retourne le texte du bouton actuellement sélectionné
+        return boutonSelectionne != null ? boutonSelectionne.getText() : null;
+    }
 }
+
